@@ -20,8 +20,7 @@ app.get('/', (req, res) => {
 
 app.post('/', (req, res) => {
     const data = req.body;
-    console.log('[HTTP] recieved: \n%s', data);
-    console.log('data.message: ', data.message);
+    console.log('[HTTP] Recieved: \n%s', data);
     if (ws) {
         ws.send(JSON.stringify(data));
     }
@@ -48,20 +47,18 @@ var ws = null;
 
 wss.on('connection', (websocket) => {
     ws = websocket;
-    console.log('View connected');
+    console.log('[WebSocket] View connected');
 
     ws.on('message', (data) => {
-        console.log('[WebSocket] recieved: \n%s', data);
+        console.log('[WebSocket] Recieved: \n%s', data);
     });
 
     ws.on('close', (reason) => {
         ws = null;
-        console.log('View closed. reason: %s', reason);
+        console.log('[WebSocket] View closed. Reason: %s', reason);
     });
 });
 
 // TODO:
-// - two buttons in view
-
-// NOTES:
-// + filtering must be done here, because of Set!
+// - messages saving
+// - authors saving

@@ -1,16 +1,28 @@
 // ==UserScript==
 // @name        YouTube live chat message tracker
-// @namespace   https://github.com/Asethone/YTChatFilter/tree/main/
+// @namespace   https://github.com/Asethone/YTChatFilter
 // @version     1.0.0
 // @description This script tracks new messages in live chat, scraps them and sends to local HTTP server at http://localhost:3000
 // @author      asethone
 // @match       https://www.youtube.com/live_chat*
 // @icon        https://www.google.com/s2/favicons?sz=64&domain=youtube.com
-// @updateURL   https://github.com/Asethone/YTChatFilter/raw/main/tracker/script.user.js
-// @downloadURL https://github.com/Asethone/YTChatFilter/raw/main/tracker/script.user.js
+// @updateURL   https://github.com/Asethone/YTChatFilter/raw/main/scripts/tracker.user.js
+// @downloadURL https://github.com/Asethone/YTChatFilter/raw/main/scripts/tracker.user.js
 // @grant       GM_xmlhttpRequest
 // @connect     localhost
 // ==/UserScript==
+
+/*
+ * Filter function for retrieving data from chat message
+ * @param   {String}    message Chat message
+ * @return  {Object}            Object with properties:
+ *                                  `messages`: an array of strings that need to be added to view as separate messages
+ *                                  `allowDuplicates`: if true, the messages will appear in view even if they are duplicate previous messages 
+ */
+var filterMessage = function(message) {
+    // Handle whole messages and allow duplicate messages
+    return {messages: [message], allowDuplicates: true};
+};
 
 (function () {
     'use strict'
@@ -22,8 +34,8 @@
     // Button colors
     const statusColor = { false: '#3e3e3e', true: '#ea3322' };
     // Append button to header
-    let chatHeader = document.querySelector("yt-live-chat-header-renderer");
-    let button = document.createElement('button');
+    const chatHeader = document.querySelector("yt-live-chat-header-renderer");
+    const button = document.createElement('button');
     button.style.padding = '10px';
     button.style.marginRight = '5px';
     button.style.borderRadius = '10px';
@@ -37,9 +49,8 @@
             return;
         // timeout just in case image src-s are not yet loaded correctly
         setTimeout(() => {
-            const data = {};
             // get message text
-            data.message = (() => {
+            const rawMessage = (() => {
                 const elMsg = appendedNode.querySelector('#message');
                 let strMsg = '';
                 for (const node of elMsg.childNodes) {
@@ -53,18 +64,25 @@
                 }
                 return strMsg;
             })();
+            // filter message
+            const {messages, allowDuplicates} = filterMessage(rawMessage);
+            if (!messages)
+                return;
             // get author's image and name
-            data.imgSrc = appendedNode.querySelector('#img').getAttribute('src');
-            data.author = appendedNode.querySelector('#author-name').textContent;
-            // send message to server
-            GM_xmlhttpRequest({
-                method: 'POST',
-                url: serverURL,
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                data: JSON.stringify(data)
-            });
+            const imgSrc = appendedNode.querySelector('#img').getAttribute('src');
+            const author = appendedNode.querySelector('#author-name').textContent;
+            // send messages to server
+            for (const message of messages) {
+                const data = {imgSrc: imgSrc, author: author, message: message, allowDuplicates: allowDuplicates};
+                GM_xmlhttpRequest({
+                    method: 'POST',
+                    url: serverURL,
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    data: JSON.stringify(data)
+                });
+            }
         }, 100);
     };
     // Mutation callback
@@ -94,7 +112,7 @@
         updateStatus(!isActive);
     };
     // Disable tracking if chat is opened in new window
-    let observerPopup = new MutationObserver((mutations) => {
+    const observerPopup = new MutationObserver((mutations) => {
         for (const mutation of mutations) {
             if (!mutation.target.classList.contains('iron-selected')) {
                 updateStatus(false);
