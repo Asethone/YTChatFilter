@@ -18,7 +18,7 @@
             margin: 0;
             overflow-wrap: break-word;
             cursor: pointer;
-            display: contents;
+            height: 100%;
         }
 
         #list {
@@ -42,7 +42,7 @@
             width: 100%;
             display: flex;
             flex-direction: row;
-            align-items: center;
+            align-items: stretch;
             font-family: Roboto, Arial, sans-serif;
             font-size: 20px;
             padding: 5px;
@@ -89,7 +89,7 @@
         }
 
         #list button:hover {
-            background-color: #ff0000;
+            background-color: #509b50;
         }
 
         /* Footer */
@@ -106,7 +106,7 @@
             justify-content: center;
             border-image-source: linear-gradient(to top, #0f0f0f, #0f0f0f00);
             border-image-slice: 100% 0 0 0;
-            border-image-outset: 30px;
+            border-image-outset: 29px;
             border-image-width: 30px;
         }
 
@@ -166,6 +166,7 @@
                 top: var(--top-removing);
                 left: var(--left-removing);
                 rotate: var(--deg-removing);
+                background-color: var(--bg-color);
                 opacity: 0%;
             }
         }
@@ -183,8 +184,10 @@
         let selectedItem = null;
 
         function unselectItem() {
-            if (selectedItem)
-                selectedItem.classList.remove('selected');
+            if (selectedItem === null)
+                return;
+            
+            selectedItem.classList.remove('selected');
             selectedItem = null;
         }
 
@@ -193,9 +196,41 @@
             selectedItem = item;
         }
 
+        function removeItem(item, accept = true) {
+            if (item === null)
+                return;
+
+            const heightRemoved = item.getBoundingClientRect().height + 8;
+            // animate removed element
+            const dir = Math.floor(Math.random() * 2) * 2 - 1;    // -1 or 1
+            const intense = Math.random();
+            const deg = Math.floor(intense * 5) + 4;
+            item.style.setProperty('--deg-removing', `${dir * deg}deg`);
+            const top = Math.floor(intense * 40) + 50;
+            item.style.setProperty('--top-removing', `${-top}px`);
+            const left = Math.floor(intense * 40) + 40;
+            item.style.setProperty('--left-removing', `${dir * left}px`);
+            if (accept) {
+                item.style.setProperty('--bg-color', '#509b50');
+            } else {
+                item.style.setProperty('--bg-color', '#ff0000');
+            }
+            item.classList.add('removed');
+            // animate container
+            const itemContainer = item.parentNode;
+            itemContainer.style.height = '0px';
+            setTimeout(() => {
+                if (item === selectedItem)
+                    selectedItem = null;
+                itemContainer.remove();
+            }, 400);
+        }
+
         document.onkeydown = function (e) {
             if (e.key === 'Escape') {
                 unselectItem();
+            } else if (e.key === 'Delete' || e.key === 'Backspace' || e.key === 'd') {
+                removeItem(selectedItem, false);
             }
         };
 
@@ -238,26 +273,9 @@
             divMessage.appendChild(pMessage);
             divMessage.className = 'message';
             const btn = document.createElement('button');
-            btn.textContent = '✕';
+            btn.textContent = '✔️';
             btn.onclick = () => {
-                const heightRemoved = divItemAdded.getBoundingClientRect().height + 8;
-                // animate removed element
-                const dir = Math.floor(Math.random() * 2) * 2 - 1;    // -1 or 1
-                const intense = Math.random();
-                const deg = Math.floor(intense * 5) + 4;
-                divItemAdded.style.setProperty('--deg-removing', `${dir * deg}deg`);
-                const top = Math.floor(intense * 40) + 50;
-                divItemAdded.style.setProperty('--top-removing', `${-top}px`);
-                const left = Math.floor(intense * 40) + 40;
-                divItemAdded.style.setProperty('--left-removing', `${dir * left}px`);
-                divItemAdded.classList.add('removed');
-                // animate container
-                divItemContainer.style.height = '0px';
-                setTimeout(() => {
-                    if (divItemAdded === selectedItem)
-                        selectedItem = null;
-                    divItemContainer.remove();
-                }, 400);
+                removeItem(divItemAdded);
             }
             divItemAdded.appendChild(img);
             divItemAdded.appendChild(divAuthor);
