@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+
+<head>
+    <title>Chat view</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            background-color: #0f0f0f;
+            color: #ffffff;
+            margin: 0;
+        }
+
+        body::-webkit-scrollbar {
+            display: none;
+        }
+
+        p {
+            margin: 0;
+            overflow-wrap: break-word;
+            cursor: pointer;
+            display: contents;
+        }
+
+        #list {
+            width: 100%;
+            box-sizing: border-box;
+            min-width: 500px;
+            max-width: 800px;
+            padding: 0 8px 0 8px;
+            margin: 8px auto 60px auto;
+        }
+
+        #list .item-container {
+            position: relative;
+            /* margin-bottom: 8px;  - in height */
+            transition: height 300ms ease-out;
+        }
+
+        #list .item {
+            position: absolute;
+            box-sizing: border-box;
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            font-family: Roboto, Arial, sans-serif;
+            font-size: 20px;
+            padding: 5px;
+            background-color: #ffffff1a;
+            border-radius: 5px;
+            transition: background-color 500ms;
+        }
+
+        #list img {
+            width: 30px;
+            height: 30px;
+            border-radius: 30px;
+            margin-right: 10px;
+        }
+
+        #list .item div {
+            transition: opacity ease-out 150ms;
+        }
+
+        #list .author {
+            min-width: 120px;
+            width: 20%;
+            margin-right: 10px;
+            color: #9a9a9a;
+        }
+
+        #list .message {
+            min-width: 180px;
+            width: 70%;
+            color: #e8e8e8;
+        }
+
+        #list button {
+            display: block;
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            margin-left: 10px;
+            border: none;
+            background-color: #ffffff25;
+            border-radius: 5px;
+            color: #e8e8e8;
+            user-select: none;
+        }
+
+        #list button:hover {
+            background-color: #ff0000;
+        }
+
+        /* Footer */
+        #footer {
+            width: 100%;
+            bottom: 0;
+            padding: 5px 8px 12px 8px;
+            background-color: #0f0f0f;
+            position: fixed;
+            min-width: 500px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            border-image-source: linear-gradient(to top, #0f0f0f, #0f0f0f00);
+            border-image-slice: 100% 0 0 0;
+            border-image-outset: 30px;
+            border-image-width: 30px;
+        }
+
+        .footer-button {
+            background-color: #464646;
+            font-family: Roboto, Arial, sans-serif;
+            font-size: 16px;
+            border-radius: 20px;
+            padding: 8px;
+            cursor: default;
+            user-select: none;
+        }
+
+        .footer-button:hover {
+            background-color: #757575;
+        }
+
+        /* Animation classes */
+        .copied {
+            opacity: 50%;
+        }
+
+        #list .selected {
+            background-color: #ffffff38;
+        }
+
+        .added {
+            animation: 500ms add;
+        }
+
+        .removed {
+            animation: 400ms remove ease-out forwards;
+        }
+
+        /* Animation keyframes */
+        @keyframes add {
+            from {
+                top: 100px;
+                opacity: 0;
+            }
+
+            to {
+                top: 0px;
+                opacity: 100%;
+            }
+        }
+
+        @keyframes remove {
+            from {
+                top: 0px;
+                left: 0px;
+                rotate: 0deg;
+                opacity: 100%;
+            }
+
+            to {
+                top: var(--top-removing);
+                left: var(--left-removing);
+                rotate: var(--deg-removing);
+                opacity: 0%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="list"></div>
+    <div id="footer">
+        <div class="footer-button" id="btn-save">Save authors</div>
+    </div>
+
+    <script>
+        // Data
+        let selectedItem = null;
+
+        function unselectItem() {
+            if (selectedItem)
+                selectedItem.classList.remove('selected');
+            selectedItem = null;
+        }
+
+        function selectItem(item) {
+            item.classList.add('selected');
+            selectedItem = item;
+        }
+
+        document.onkeydown = function (e) {
+            if (e.key === 'Escape') {
+                unselectItem();
+            }
+        };
+
+        window.onresize = function () {
+            if (window.innerWidth < 400)
+                return;
+            const list = document.getElementById('list');
+            for (const divItemContainer of list.childNodes) {
+                divItemContainer.style.height = `${divItemContainer.firstChild.getBoundingClientRect().height + 8}px`;
+            }
+        };
+
+        function addMessage(imgSrc, author, message) {
+            const list = document.getElementById('list');
+            const divItemContainer = document.createElement('div');
+            divItemContainer.className = 'item-container';
+            const divItemAdded = document.createElement('div');
+            divItemAdded.className = 'item';
+            const onTextClick = function (div, text) {
+                navigator.clipboard.writeText(text);
+                // pulse animation
+                div.classList.add('copied');
+                setTimeout(() => div.classList.remove('copied'), 250);
+                // mark current item as selected
+                unselectItem();
+                selectItem(divItemAdded);
+            }
+            const img = document.createElement('img');
+            img.setAttribute('src', imgSrc);
+            const divAuthor = document.createElement('div');
+            const pAuthor = document.createElement('p');
+            pAuthor.textContent = author;
+            pAuthor.onclick = () => onTextClick(divAuthor, author);
+            divAuthor.appendChild(pAuthor);
+            divAuthor.className = 'author'
+            const divMessage = document.createElement('div');
+            const pMessage = document.createElement('p');
+            pMessage.textContent = message;
+            pMessage.onclick = () => onTextClick(divMessage, message);
+            divMessage.appendChild(pMessage);
+            divMessage.className = 'message';
+            const btn = document.createElement('button');
+            btn.textContent = '✕';
+            btn.onclick = () => {
+                const heightRemoved = divItemAdded.getBoundingClientRect().height + 8;
+                // animate removed element
+                const dir = Math.floor(Math.random() * 2) * 2 - 1;    // -1 or 1
+                const intense = Math.random();
+                const deg = Math.floor(intense * 5) + 4;
+                divItemAdded.style.setProperty('--deg-removing', `${dir * deg}deg`);
+                const top = Math.floor(intense * 40) + 50;
+                divItemAdded.style.setProperty('--top-removing', `${-top}px`);
+                const left = Math.floor(intense * 40) + 40;
+                divItemAdded.style.setProperty('--left-removing', `${dir * left}px`);
+                divItemAdded.classList.add('removed');
+                // animate container
+                divItemContainer.style.height = '0px';
+                setTimeout(() => {
+                    if (divItemAdded === selectedItem)
+                        selectedItem = null;
+                    divItemContainer.remove();
+                }, 400);
+            }
+            divItemAdded.appendChild(img);
+            divItemAdded.appendChild(divAuthor);
+            divItemAdded.appendChild(divMessage);
+            divItemAdded.appendChild(btn);
+            divItemContainer.appendChild(divItemAdded);
+            list.appendChild(divItemContainer);
+            // set height ( +8px for bottom margin just for animating only height property )
+            divItemContainer.style.height = `${divItemAdded.getBoundingClientRect().height + 8}px`;
+            // animation for adding the element
+            divItemAdded.classList.add('added');
+            setTimeout(() => divItemAdded.classList.remove('added'), 500);
+        }
+
+        // fn() - function called on popup unload
+        function setOnCloseCallback(fn) {
+            window.onbeforeunload = () => fn();
+        }
+        // fn() - returns all unique authors in an array
+        function setOnSaveCallback(fn) {
+            const btnSave = document.getElementById('btn-save');
+            btnSave.onclick = () => {
+                const link = document.createElement("a");
+                const content = fn();
+                for (let i = 0; i < content.length; i++) {
+                    content[i] += '\n';
+                }
+                const file = new Blob(content, { type: 'text/plain;charset=utf-8' });
+                link.href = URL.createObjectURL(file);
+                link.download = "authors.txt";
+                link.click();
+                URL.revokeObjectURL(link.href);
+            };
+        }
+
+        // generates n messages (for testing purposes)
+        function test(n = 10) {
+            const getRandomString = function (length) {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=';
+                let result = '';
+                for (let i = 0; i < length; i++) {
+                    result += chars[Math.floor(Math.random() * chars.length)];
+                }
+                return result;
+            }
+
+            for (let i = 0; i < n; i++) {
+                const nickname = getRandomString(Math.floor(Math.random() * 20) + 4);
+                const message = getRandomString(Math.floor(Math.random() * 100) + 1);
+                addMessage('https://icons.veryicon.com/png/o/miscellaneous/uhuibao_yb/debug.png', nickname, message);
+            }
+        }
+
+        // create WebSocket connection
+        const ws = new WebSocket('ws://localhost:3001');
+        ws.onmessage = (event) => {
+            let msg = JSON.parse(event.data);
+            addMessage(msg.imgSrc, msg.author, msg.message);
+        };
+
+    </script>
+</body>
