@@ -180,13 +180,30 @@
     </div>
 
     <script>
-        // Data
+        // Create a WebSocket connection
+        const ws = new WebSocket('ws://localhost:3001');
+        ws.onmessage = (event) => {
+            let data = JSON.parse(event.data);
+            switch (data.type) {
+                case 0:     // server gives a message to add
+                    const { imgSrc, author, message } = data.data;
+                    addMessage(imgSrc, author, message);
+                    break;
+                case 1:     // server gives an authors array
+                    saveAuthors(data.data);
+                    break;
+                default:
+                    break;
+            }
+        };
+
+        // Item selection
         let selectedItem = null;
 
         function unselectItem() {
             if (selectedItem === null)
                 return;
-            
+
             selectedItem.classList.remove('selected');
             selectedItem = null;
         }
@@ -243,6 +260,26 @@
             }
         };
 
+        const btnSave = document.getElementById('btn-save');
+        btnSave.onclick = () => {
+            ws.send(JSON.stringify({
+                type: 1,    // view requires authors
+                data: null
+            }));
+        };
+
+        function saveAuthors(content) {
+            const link = document.createElement("a");
+            for (let i = 0; i < content.length; i++) {
+                content[i] += '\n';
+            }
+            const file = new Blob(content, { type: 'text/plain;charset=utf-8' });
+            link.href = URL.createObjectURL(file);
+            link.download = "authors.txt";
+            link.click();
+            URL.revokeObjectURL(link.href);
+        }
+
         function addMessage(imgSrc, author, message) {
             const list = document.getElementById('list');
             const divItemContainer = document.createElement('div');
@@ -276,6 +313,10 @@
             btn.textContent = '✔️';
             btn.onclick = () => {
                 removeItem(divItemAdded);
+                ws.send(JSON.stringify({
+                    type: 2,        // author to be saved
+                    data: author
+                }));
             }
             divItemAdded.appendChild(img);
             divItemAdded.appendChild(divAuthor);
@@ -288,27 +329,6 @@
             // animation for adding the element
             divItemAdded.classList.add('added');
             setTimeout(() => divItemAdded.classList.remove('added'), 500);
-        }
-
-        // fn() - function called on popup unload
-        function setOnCloseCallback(fn) {
-            window.onbeforeunload = () => fn();
-        }
-        // fn() - returns all unique authors in an array
-        function setOnSaveCallback(fn) {
-            const btnSave = document.getElementById('btn-save');
-            btnSave.onclick = () => {
-                const link = document.createElement("a");
-                const content = fn();
-                for (let i = 0; i < content.length; i++) {
-                    content[i] += '\n';
-                }
-                const file = new Blob(content, { type: 'text/plain;charset=utf-8' });
-                link.href = URL.createObjectURL(file);
-                link.download = "authors.txt";
-                link.click();
-                URL.revokeObjectURL(link.href);
-            };
         }
 
         // generates n messages (for testing purposes)
@@ -328,13 +348,5 @@
                 addMessage('https://icons.veryicon.com/png/o/miscellaneous/uhuibao_yb/debug.png', nickname, message);
             }
         }
-
-        // create WebSocket connection
-        const ws = new WebSocket('ws://localhost:3001');
-        ws.onmessage = (event) => {
-            let msg = JSON.parse(event.data);
-            addMessage(msg.imgSrc, msg.author, msg.message);
-        };
-
     </script>
 </body>
