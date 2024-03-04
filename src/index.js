@@ -2,6 +2,9 @@ const express = require('express');
 const { readFile } = require('fs');
 const { WebSocketServer } = require('ws');
 
+// Data
+const msgSet = new Set();
+
 // HTTP server
 const app = express();
 
@@ -21,9 +24,14 @@ app.get('/', (req, res) => {
 app.post('/', (req, res) => {
     const data = req.body;
     console.log('[HTTP] Recieved: \n%s', data);
-    if (ws) {
-        ws.send(JSON.stringify(data));
+
+    if (data.allowDuplicates === false && msgSet.has(data.message)) {
+        res.status(202).send();
+        return;
     }
+
+    msgSet.add(data.message);
+    sendMessageToView(data);
     res.status(200).send();
 });
 
@@ -58,6 +66,12 @@ wss.on('connection', (websocket) => {
         console.log('[WebSocket] View closed. Reason: %s', reason);
     });
 });
+
+function sendMessageToView(data) {
+    if (ws) {
+        ws.send(JSON.stringify(data));
+    }
+}
 
 // TODO:
 // - messages saving
