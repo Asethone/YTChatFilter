@@ -5,7 +5,9 @@ const { WebSocketServer } = require('ws');
 // Data
 const msgSet = new Set();       // Set of all messages which were recieved so far to handle duplicates
 const authorsSet = new Set();   // Set of all authors which messages were submitted by pressing on '✅' button
-const msgQueue = [];            // Array of currently active messages
+const activeMsgs = new Map();   // Map of currently active messages with id-s as keys
+
+let msgId = 1;                     // An unique message identifier
 
 // HTTP server
 const app = express();
@@ -32,8 +34,10 @@ app.post('/', (req, res) => {
         return;
     }
 
+    data.id = msgId++;
+    activeMsgs.set(data.id, data);
     msgSet.add(data.message);
-    sendMessageToView(data);
+    sendDataToView(0, data);    // send message to view
     res.status(200).send();
 });
 
@@ -59,18 +63,24 @@ wss.on('connection', (websocket) => {
     ws = websocket;
     console.log('[WebSocket] View connected');
 
+    // send every active message to view
+    for (entry of activeMsgs) {
+        sendDataToView(0, entry[1]);
+    }
+
     ws.on('message', (rawData) => {
         console.log('[WebSocket] Recieved: \n%s', rawData);
         const data = JSON.parse(rawData);
         switch (data.type) {
             case 1:             // view requires authors
-                ws.send(JSON.stringify({
-                    type: 1,    // authors array
-                    data: Array.from(authorsSet)
-                }));
+                sendDataToView(1, Array.from(authorsSet));  // send authors array
                 break;
-            case 2:             // view sends author to save
-                authorsSet.add(data.data);
+            case 2:             // view discards message with saving author
+                // data.data = id
+                authorsSet.add(activeMsgs.get(data.data).author);
+            case 3:             // view discards message without saving
+                // data.data = id
+                activeMsgs.delete(data.data);
                 break;
             default:
                 break;
@@ -84,15 +94,14 @@ wss.on('connection', (websocket) => {
     });
 });
 
-function sendMessageToView(data) {
+function sendDataToView(type, data) {
     if (ws) {
         ws.send(JSON.stringify({
-            type: 0,    // message object
+            type: type,
             data: data
         }));
     }
 }
 
 // TODO:
-// - fill msgQueue
 // - fix bug above

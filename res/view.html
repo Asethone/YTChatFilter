@@ -185,17 +185,24 @@
         ws.onmessage = (event) => {
             let data = JSON.parse(event.data);
             switch (data.type) {
-                case 0:     // server gives a message to add
-                    const { imgSrc, author, message } = data.data;
-                    addMessage(imgSrc, author, message);
+                case 0:     // server sends a message to add
+                    const { imgSrc, author, message, id } = data.data;
+                    addMessage(imgSrc, author, message, id);
                     break;
-                case 1:     // server gives an authors array
+                case 1:     // server sends an authors array
                     saveAuthors(data.data);
                     break;
                 default:
                     break;
             }
         };
+
+        function sendDataToServer(type, data) {
+            ws.send(JSON.stringify({
+                type: type,
+                data: data
+            }));
+        }
 
         // Item selection
         let selectedItem = null;
@@ -227,10 +234,13 @@
             item.style.setProperty('--top-removing', `${-top}px`);
             const left = Math.floor(intense * 40) + 40;
             item.style.setProperty('--left-removing', `${dir * left}px`);
+            const msgId = parseInt(item.getAttribute('msg_id'));
             if (accept) {
                 item.style.setProperty('--bg-color', '#509b50');
+                sendDataToServer(2, msgId);     // discard message with saving author
             } else {
                 item.style.setProperty('--bg-color', '#ff0000');
+                sendDataToServer(3, msgId);     // discard message without saving
             }
             item.classList.add('removed');
             // animate container
@@ -262,10 +272,7 @@
 
         const btnSave = document.getElementById('btn-save');
         btnSave.onclick = () => {
-            ws.send(JSON.stringify({
-                type: 1,    // view requires authors
-                data: null
-            }));
+            sendDataToServer(1, null);  // view requires authors
         };
 
         function saveAuthors(content) {
@@ -280,7 +287,7 @@
             URL.revokeObjectURL(link.href);
         }
 
-        function addMessage(imgSrc, author, message) {
+        function addMessage(imgSrc, author, message, id) {
             const list = document.getElementById('list');
             const divItemContainer = document.createElement('div');
             divItemContainer.className = 'item-container';
@@ -313,10 +320,6 @@
             btn.textContent = '✔️';
             btn.onclick = () => {
                 removeItem(divItemAdded);
-                ws.send(JSON.stringify({
-                    type: 2,        // author to be saved
-                    data: author
-                }));
             }
             divItemAdded.appendChild(img);
             divItemAdded.appendChild(divAuthor);
@@ -329,6 +332,10 @@
             // animation for adding the element
             divItemAdded.classList.add('added');
             setTimeout(() => divItemAdded.classList.remove('added'), 500);
+            // add unique message id
+            if (id !== undefined && id !== null) {
+                divItemAdded.setAttribute('msg_id', String(id));
+            }
         }
 
         // generates n messages (for testing purposes)
