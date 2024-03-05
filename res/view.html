@@ -192,6 +192,9 @@
                 case 1:     // server sends an authors array
                     saveAuthors(data.data);
                     break;
+                case 2:     // server wants to remove message
+                    removeItem(document.querySelector('.item[msg_id="' + data.data.msgId + '"]'), data.data.accept, true);
+                    break;
                 default:
                     break;
             }
@@ -220,7 +223,7 @@
             selectedItem = item;
         }
 
-        function removeItem(item, accept = true) {
+        function removeItem(item, accept = true, silent = false) {
             if (item === null)
                 return;
 
@@ -237,10 +240,12 @@
             const msgId = parseInt(item.getAttribute('msg_id'));
             if (accept) {
                 item.style.setProperty('--bg-color', '#509b50');
-                sendDataToServer(2, msgId);     // discard message with saving author
+                if (!silent)
+                    sendDataToServer(2, msgId);     // discard message with saving author
             } else {
                 item.style.setProperty('--bg-color', '#ff0000');
-                sendDataToServer(3, msgId);     // discard message without saving
+                if (!silent)
+                    sendDataToServer(3, msgId);     // discard message without saving
             }
             item.classList.add('removed');
             // animate container
