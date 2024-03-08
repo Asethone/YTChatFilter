@@ -107,3 +107,6 @@ function sendDataToAllViews(type, data) {
         sendDataToView(ws, type, data);
     }
 }
+
+// TODO:
+// - less console.log()-s

@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name        YouTube live chat message tracker
-// @namespace   https://github.com/Asethone/YTChatFilter
+// @namespace   https://github.com/Asethone/YTLiveChatView
 // @version     1.0.0
 // @description This script tracks new messages in live chat, scraps them and sends to local HTTP server at http://localhost:3000
 // @author      asethone
 // @match       https://www.youtube.com/live_chat*
 // @icon        https://www.google.com/s2/favicons?sz=64&domain=youtube.com
-// @updateURL   https://github.com/Asethone/YTChatFilter/raw/main/scripts/tracker.user.js
-// @downloadURL https://github.com/Asethone/YTChatFilter/raw/main/scripts/tracker.user.js
+// @updateURL   https://github.com/Asethone/YTLiveChatView/raw/main/scripts/tracker.user.js
+// @downloadURL https://github.com/Asethone/YTLiveChatView/raw/main/scripts/tracker.user.js
 // @grant       GM_xmlhttpRequest
 // @connect     localhost
 // ==/UserScript==
