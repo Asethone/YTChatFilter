@@ -17,7 +17,7 @@
  * @param   {String}    message Chat message
  * @return  {Object}            Object with properties:
  *                                  `messages`: an array of strings that need to be added to view as separate messages
- *                                  `allowDuplicates`: if true, the messages will appear in view even if they are duplicate previous messages 
+ *                                  `allowDuplicates`: if true, the messages will appear in view even if they are duplicate previous messages
  */
 var filterMessage = function(message) {
     // Handle whole messages and allow duplicate messages
@@ -65,9 +65,10 @@ var filterMessage = function(message) {
                 return strMsg;
             })();
             // filter message
-            const {messages, allowDuplicates} = filterMessage(rawMessage);
-            if (!messages)
+            const filteredRes = filterMessage(rawMessage);
+            if (!filteredRes)
                 return;
+            const {messages, allowDuplicates} = filteredRes;
             // get author's image and name
             const imgSrc = appendedNode.querySelector('#img').getAttribute('src');
             const author = appendedNode.querySelector('#author-name').textContent;
@@ -94,7 +95,7 @@ var filterMessage = function(message) {
         }
     };
     // Create observer to watch for new chat messages
-    const observer = new MutationObserver(callback);    
+    const observer = new MutationObserver(callback);
     // Toggle status function
     function updateStatus(status) {
         isActive = status;
