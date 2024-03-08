@@ -265,7 +265,7 @@
         document.onkeydown = function (e) {
             if (e.key === 'Escape') {
                 unselectItem();
-            } else if (e.key === 'Delete' || e.key === 'Backspace' || e.key === 'd') {
+            } else if (e.key === 'Delete' || e.key === 'Backspace' || e.code === 'KeyD') {
                 removeItem(selectedItem, false);
             }
         };
