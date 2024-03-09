@@ -1,5 +1,4 @@
 build/
-build.bat
 test/
 # nodejs
 node_modules/
